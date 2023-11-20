@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Elastic.Clients.Elasticsearch;
 using Elasticsearch.Net;
 using Nest;
 
@@ -11,17 +13,30 @@ namespace ElasticsearchExamples
     {
         const string IndexName = "stock-demo-v1";
         const string AliasName = "stock-demo";
+    //  public static ElasticsearchClient Client =>  new ElasticsearchClient( new ElasticsearchClientSettings(new Uri("https://localhost:9200"))
+    //         .CertificateFingerprint("44b2fa34ad571bc23f6e80e1355656192b2fc7b6")
+    //         .Authentication(new BasicAuthentication("elastic", "Elastic1!")));//.IndexAsync(IndexName);
 
-        public static IElasticClient Client = new ElasticClient(new ConnectionSettings().DefaultIndex(IndexName));
+        static SingleNodeConnectionPool pool = new SingleNodeConnectionPool(new Uri("https://localhost:9200"));
+
+        static ConnectionSettings settings = new ConnectionSettings(pool)
+           // .CertificateFingerprint("44:b2:fa:34:ad:57:1b:c2:3f:6e:80:e1:35:56:56:19:2b:2f:c7:b6")
+            .BasicAuthentication("elastic", "Elastic1!")
+            .EnableApiVersioningHeader();
+      //  public static IElasticClient Client = new ElasticClient(new ConnectionSettings().DefaultIndex(IndexName));
+  public static IElasticClient Client = new ElasticClient(settings);
+
+        public static ConnectionSettings Settings { get => settings; set => settings = value; }
 
         private static async Task Main(string[] args)
         {
             var existsResponse = await Client.Indices.ExistsAsync(IndexName);
-
+            var sss=ReadStockData();
+            var sd=sss.Count();
             if (!existsResponse.Exists)
             {
                 var newIndexResponse = await Client.Indices.CreateAsync(IndexName, i => i
-                    .Map(m => m
+                    .Map<StockData>(m => m
                         .AutoMap<StockData>()
                         .Properties<StockData>(p => p.Keyword(k => k.Name(f => f.Symbol))))
                     .Settings(s => s.NumberOfShards(1).NumberOfReplicas(0)));
@@ -44,7 +59,9 @@ namespace ElasticsearchExamples
         public static IEnumerable<StockData> ReadStockData()
         {
             // Update this to the correct path of the CSV file
-            var file = new StreamReader("c:\\stock-data\\all_stocks_5yr.csv");
+            var file = new StreamReader("C:\\Nauka\\elasticsearch-examples\\all_stocks_5yr.csv", new FileStreamOptions{
+                Access=FileAccess.Read
+            });
 
             string line;
             while ((line = file.ReadLine()) is not null) yield return new StockData(line);
