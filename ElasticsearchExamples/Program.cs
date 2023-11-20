@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,13 +15,13 @@ internal class Program
     private const string AliasName = "stock-demo";
 
     static SingleNodeConnectionPool pool = new SingleNodeConnectionPool(new Uri("https://localhost:9200"));
-
     static ConnectionSettings settings = new ConnectionSettings(pool)
            // .CertificateFingerprint("44:b2:fa:34:ad:57:1b:c2:3f:6e:80:e1:35:56:56:19:2b:2f:c7:b6")
             .BasicAuthentication("elastic", "Elastic1!")
             .EnableApiVersioningHeader();
-    public static IElasticClient Client = new ElasticClient(settings);
-            
+      //  public static IElasticClient Client = new ElasticClient(new ConnectionSettings().DefaultIndex(IndexName));
+    public static IElasticClient Client = new ElasticClient(settings.DefaultIndex(IndexName));
+
     private static async Task Main(string[] args)
     {
         var existsResponse = await Client.Indices.ExistsAsync(IndexName);
@@ -165,8 +166,9 @@ internal class Program
     public static IEnumerable<StockData> ReadStockData()
     {
         // Update this to the correct path of the CSV file
-        var file = new StreamReader("c:\\stock-data\\all_stocks_5yr.csv");
-
+         var file = new StreamReader("C:\\Nauka\\elasticsearch-examples\\all_stocks_5yr.csv", new FileStreamOptions{
+                Access=FileAccess.Read
+            });
         string line;
         while ((line = file.ReadLine()) is not null) yield return new StockData(line);
     }
@@ -189,21 +191,21 @@ public class StockData
         if (DateTime.TryParse(columns[0], out var date))
             Date = date;
 
-        if (double.TryParse(columns[1], out var open))
+        if (double.TryParse(columns[1], NumberStyles.AllowDecimalPoint, CultureInfo.CreateSpecificCulture("en-US"), out var open))
             Open = open;
 
-        if (double.TryParse(columns[2], out var high))
+        if (double.TryParse(columns[2], NumberStyles.AllowDecimalPoint, CultureInfo.CreateSpecificCulture("en-US"),out var high))
             High = high;
 
-        if (double.TryParse(columns[3], out var low))
+        if (double.TryParse(columns[3], NumberStyles.AllowDecimalPoint,  CultureInfo.CreateSpecificCulture("en-US"),out var low))
             Low = low;
 
-        if (double.TryParse(columns[4], out var close))
+        if (double.TryParse(columns[4], NumberStyles.AllowDecimalPoint,  CultureInfo.CreateSpecificCulture("en-US"),out var close))
             Close = close;
 
         if (uint.TryParse(columns[5], out var volume))
             Volume = volume;
-
+  
         Symbol = columns[6];
 
         if (CompanyLookup.TryGetValue(Symbol, out var name))
