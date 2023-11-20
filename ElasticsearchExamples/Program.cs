@@ -80,7 +80,7 @@ internal class Program
 
         foreach (var symbol in symbols)
         {
-            //Console.WriteLine(symbol);
+            Console.WriteLine(symbol);
         }
 
         var symbolResponse = await Client.SearchAsync<StockData>(s => s.Index(AliasName)
@@ -95,7 +95,7 @@ internal class Program
 
         foreach (var data in symbolResponse.Documents)
         {
-            //Console.WriteLine($"{data.Date}   {data.High} {data.Low}");
+            Console.WriteLine($"{data.Date}   {data.High} {data.Low}");
         }
 
         var fullTextSearchResponse = await Client.SearchAsync<StockData>(s => s.Index(AliasName)
@@ -105,7 +105,7 @@ internal class Program
 
         foreach (var data in fullTextSearchResponse.Documents)
         {
-            //Console.WriteLine($"{data.Name} {data.Date}   {data.High} {data.Low}");
+            Console.WriteLine($"{data.Name} {data.Date}   {data.High} {data.Low}");
         }
 
         var aggExampleResponse = await Client.SearchAsync<StockData>(s => s
@@ -127,7 +127,7 @@ internal class Program
         foreach (var bucket in monthly)
         {
             var volume = bucket.Sum("trade-volumes").Value;
-            //Console.WriteLine($"{bucket.Date} : {volume}");
+            Console.WriteLine($"{bucket.Date} : {volume}");
         }
 
         var scrollAllObservable = Client.ScrollAll<StockData>("10s", Environment.ProcessorCount, scroll => scroll
