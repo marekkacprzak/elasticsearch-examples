@@ -1,4 +1,10 @@
-﻿using Nest;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Elasticsearch.Net;
+using Nest;
 
 namespace ElasticsearchExamples;
 
@@ -7,8 +13,14 @@ internal class Program
     private const string IndexName = "stock-demo-v1";
     private const string AliasName = "stock-demo";
 
-    public static IElasticClient Client = new ElasticClient(new ConnectionSettings().DefaultIndex(IndexName));
+    static SingleNodeConnectionPool pool = new SingleNodeConnectionPool(new Uri("https://localhost:9200"));
 
+    static ConnectionSettings settings = new ConnectionSettings(pool)
+           // .CertificateFingerprint("44:b2:fa:34:ad:57:1b:c2:3f:6e:80:e1:35:56:56:19:2b:2f:c7:b6")
+            .BasicAuthentication("elastic", "Elastic1!")
+            .EnableApiVersioningHeader();
+    public static IElasticClient Client = new ElasticClient(settings);
+            
     private static async Task Main(string[] args)
     {
         var existsResponse = await Client.Indices.ExistsAsync(IndexName);
